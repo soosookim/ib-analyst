@@ -32,25 +32,39 @@ export default async function handler(req) {
 
     if (!anthropicRes.ok) {
       const errText = await anthropicRes.text()
-      return new Response(JSON.stringify({ error: errText }), {
-        status: anthropicRes.status,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      })
+      return new Response(
+        `data: ${JSON.stringify({ type: 'error', error: errText })}\n\n`,
+        {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/event-stream',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
+      )
     }
 
+    // 스트리밍을 그대로 전달
     return new Response(anthropicRes.body, {
       status: 200,
       headers: {
         'Content-Type': 'text/event-stream',
         'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'no-cache',
+        'Cache-Control': 'no-cache, no-transform',
         'X-Accel-Buffering': 'no',
+        'Transfer-Encoding': 'chunked',
       },
     })
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-    })
+    return new Response(
+      `data: ${JSON.stringify({ type: 'error', error: err.message })}\n\n`,
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Access-Control-Allow-Origin': '*',
+        },
+      }
+    )
   }
 }
